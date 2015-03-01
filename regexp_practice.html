@@ -1,0 +1,86 @@
+<html>
+<head>
+  <script src="https://cdn.firebase.com/js/client/2.0.4/firebase.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="">
+</head>
+<body>
+
+<div class="main-practice-field">
+  <div class="string-add-select" style="width:200px">
+    <select class="select-menu" id="selectString">
+      <option value="Choose String to Practice On" selected>Choose String to Practice On</option>
+    </select>
+    <input class="enter-new-string" type="text" id="stringInput" placeholder="Enter a new string to practice on:" size=30>
+  </div>
+  <table id="regexpsAndMatches">
+    <tr>
+      <th>String</th>
+      <th>RegExp</th>
+      <th>Match</th>
+    </tr>
+  </table>
+  <footer>
+    <input class="regexp-enter" type="text" id="regExpInput" placeholder="Enter a RegExp">
+    <input class="flags-field" type="text" id="flagsInput" placeholder="Add flags here">
+  </footer>
+</div>
+<script>
+  var RegExp_SIZE = 50;
+
+  
+  var stringRegExpRef = new Firebase('https://boiling-heat-3527.firebaseio.com/');
+
+  
+  var htmlForPath = {};
+
+
+  function handleRegExpAdded(regExpMatch, prevRegExpName) {
+    var newMatchRow = $("<tr/>");
+    newMatchRow.append($("<td/>").append($("<em/>").text(regExpMatch.val().string)));
+    newMatchRow.append($("<td/>").append($("<em/>").text(regExpMatch.val().regExp)));
+    newMatchRow.append($("<td/>").text(regExpMatch.val().match));
+
+
+    htmlForPath[regExpMatch.key()] = newMatchRow;
+
+    
+    $("#regexpsAndMatches").append(newMatchRow);
+    
+  }
+
+  var regExpsToShow = stringRegExpRef.limitToLast(RegExp_SIZE);
+
+  regExpsToShow.on('child_added', function (newRegExpMatch, prevRegExpName) {
+    handleRegExpAdded(newRegExpMatch, prevRegExpName);
+  });
+
+  $("#regExpInput").keypress(function (e) {
+    if (e.keyCode == 13) {
+      var newRegExp = new RegExp($("#regExpInput").val(),$("#flagsInput").val());
+      var newRegExpString = '/'+$("#regExpInput").val()+'/'+$("#flagsInput").val();
+      var newMatch = $("#selectString").val().match(newRegExp).slice(0);
+      var matchedAgainst = $("#selectString").val();
+
+      $("#regExpInput").val("");
+
+      if (newRegExpString.length === 2)
+        return;
+
+      var regExpRef = stringRegExpRef.child(newRegExpString);
+
+      regExpRef.set({ regExp:newRegExpString, match:newMatch, string:matchedAgainst });
+    }
+  });
+
+  $("#stringInput").keypress(function (e) {
+    if (e.keyCode == 13) {
+      var o = new Option($("#stringInput").val(), $("#stringInput").val());
+      $(o).html($("#stringInput").val());
+      $(o).prop('selected',true);
+      $("#selectString").append(o);
+    }
+  });
+</script>
+</body>
+</html>
